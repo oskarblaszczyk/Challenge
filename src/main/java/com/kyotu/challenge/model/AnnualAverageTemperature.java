@@ -1,4 +1,4 @@
-package com.kyotu.challenge.model.entity;
+package com.kyotu.challenge.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -1,6 +1,9 @@
 package com.kyotu.challenge.service;
 
-import com.kyotu.challenge.model.entity.AnnualAverageTemperature;
+import com.kyotu.challenge.exception.CityNotFoundException;
+import com.kyotu.challenge.exception.DateParseException;
+import com.kyotu.challenge.exception.TemperatureParseException;
+import com.kyotu.challenge.model.AnnualAverageTemperature;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,49 +43,37 @@ public class ReportServiceTest {
     }
 
     @Test
-    public void testCalculateAnnualAverages_withDifferentCity() {
-        String data = """
-                Warszawa;2018-09-19 05:17:32.619;22.5
-                Warszawa;2018-09-20 05:17:32.619;23.0
-                Kraków;2019-09-19 05:17:32.619;20.0
-                Kraków;2019-09-20 05:17:32.619;21.5""";
+    public void testCalculateAnnualAverages_withCityNotFound() {
+        String data = "Kraków;2018-09-19 05:17:32.619;22.5\n" +
+                "Kraków;2018-09-20 05:17:32.619;23.0";
         InputStream inputStream = new ByteArrayInputStream(data.getBytes());
         String city = "Warszawa";
 
-        List<AnnualAverageTemperature> result = reportService.calculateAnnualAverages(inputStream, city);
+        CityNotFoundException exception = assertThrows(CityNotFoundException.class, () -> reportService.calculateAnnualAverages(inputStream, city));
 
-        assertEquals(1, result.size());
-        assertEquals("2018", result.getFirst().getYear());
-        assertEquals(22.8, result.getFirst().getAverageTemperature());
+        assertEquals("City Warszawa not found in the provided data.", exception.getMessage());
     }
 
     @Test
-    public void testCalculateAnnualAverages_withEmptyData() {
-        String data = "";
+    public void testCalculateAnnualAverages_withInvalidDateFormat() {
+        String data = "Warszawa;invalid-date;22.5";
         InputStream inputStream = new ByteArrayInputStream(data.getBytes());
         String city = "Warszawa";
 
-        List<AnnualAverageTemperature> result = reportService.calculateAnnualAverages(inputStream, city);
+        DateParseException exception = assertThrows(DateParseException.class, () -> reportService.calculateAnnualAverages(inputStream, city));
 
-        assertTrue(result.isEmpty());
+        assertEquals("Text 'invalid-date' could not be parsed at index 0", exception.getMessage());
     }
 
     @Test
-    public void testCalculateAnnualAverages_withInvalidData() {
-        String data = """
-                Invalid;Data;Line
-                Warszawa;2018-09-19 05:17:32.619;22.5
-                Warszawa;2018-09-20 05:17:32.619;invalidTemp
-                Warszawa;2019-09-20 05:17:32.619;21.5""";
+    public void testCalculateAnnualAverages_withInvalidTemperatureFormat() {
+        String data = "Warszawa;2018-09-19 05:17:32.619;invalid-temp";
         InputStream inputStream = new ByteArrayInputStream(data.getBytes());
         String city = "Warszawa";
 
-        List<AnnualAverageTemperature> result = reportService.calculateAnnualAverages(inputStream, city);
+        TemperatureParseException exception = assertThrows(TemperatureParseException.class, () -> reportService.calculateAnnualAverages(inputStream, city));
 
-        assertEquals(2, result.size());
-        assertEquals("2018", result.get(0).getYear());
-        assertEquals(22.5, result.get(0).getAverageTemperature());
-        assertEquals("2019", result.get(1).getYear());
-        assertEquals(21.5, result.get(1).getAverageTemperature());
+        assertEquals("For input string: \"invalid-temp\"", exception.getMessage());
     }
+
 }

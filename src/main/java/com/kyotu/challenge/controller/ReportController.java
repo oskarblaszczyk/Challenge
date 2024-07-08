@@ -29,7 +29,7 @@ public class ReportController {
         List<AnnualAverageTemperatureDto> report = reportService.calculateAnnualAverages(inputStream, city).stream()
                 .map(AnnualAverageTemperatureDto::of)
                 .toList();
-        return ResponseEntity.status(HttpStatus.CREATED).body(report);
+        return ResponseEntity.status(HttpStatus.OK).body(report);
     }
 
 
